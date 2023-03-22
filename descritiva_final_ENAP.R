@@ -18,5 +18,6 @@ dados <- function(arquivo_xlsx,campo){
   return(area)
 }
 
-saude1 <- dados('Dataset_saúde.xlsx','Saúde')
+saude <- dados('Dataset_saúde.xlsx','Saúde')
+educacao <- dados('Dataset_educação.xlsx','Educação')
 
