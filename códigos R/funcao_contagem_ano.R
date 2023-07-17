@@ -1,4 +1,3 @@
-############################################AGREGAÇÃO POR ANOS
 ###
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load('tidyverse','readxl','data.table','writexl','openxlsx')
