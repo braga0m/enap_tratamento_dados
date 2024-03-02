@@ -2,7 +2,7 @@
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load('tidyverse','readxl','data.table','writexl','openxlsx')
 
-dados <- read_excel('LISTA_POLITICAS_20_04_2023.xlsx')
+dados <- read_excel('Lista de Políticas_FINAL.xlsx')
 
 ####
 years <- c(1990:2022)
@@ -78,3 +78,22 @@ planilhas_nomes <- list('Geral' = geral,
                         )
 
 write.xlsx(planilhas_nomes, file = 'contagem_de_politicas_por_ano.xlsx')
+
+
+
+###########################################################################
+dados <- read_xlsx('C:\\Users\\Matias\\Documents\\Projetos_e_Estudos\\ENAP\\Dados\\banco final 13_12_2014.xlsx')
+
+#
+s_shaped <- dados%>%
+  select(AnoAdoção)%>%
+  filter(AnoAdoção != '#NULL!')%>%
+  mutate(AnoAdoção = as.numeric(AnoAdoção))%>%
+  group_by(AnoAdoção)%>%
+  summarise(n = n())%>%
+  mutate(acumulado = cumsum(n))%>%
+  arrange(AnoAdoção)
+
+s_shaped%>%mutate(AnoAdoção = as.factor(AnoAdoção))
+
+write_xlsx(s_shaped, 's_shaped_tabela_ajustada.xlsx')

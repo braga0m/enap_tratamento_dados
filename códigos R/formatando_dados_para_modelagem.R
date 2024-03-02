@@ -1,16 +1,26 @@
 ###pacotes
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load('tidyverse','readxl','data.table',
-               'writexl','lubridate','survival')
+               'writexl','lubridate','survival',
+               'vroom')
 ###dados
 dados <- read_xlsx('C:\\Users\\Matias\\Documents\\Projetos_e_Estudos\\ENAP\\Dados\\LISTA_POLITICAS_20_04_2023.xlsx')
-list.files()
+
+ipea <- vroom('C:\\Users\\Matias\\Documents\\Projetos_e_Estudos\\ENAP\\Dados\\Lista_Completa_Políticas_IPEA.csv')%>%
+  select(politica,grande_area)%>%
+  distinct(politica,grande_area)
+
+dados <- dados%>%
+  left_join(ipea, by = c('Nome' = 'politica'))%>%
+  mutate(grande_area = replace_na(grande_area,'Social'))
+
 
 ###modificações
 inicio_mandatos <- c(as.Date('1985-03-15'),as.Date('1990-03-15'),as.Date('1992-12-29'),
                      as.Date('1995-01-01'),as.Date('1999-01-01'),as.Date('2003-01-01'),
                      as.Date('2007-01-01'),as.Date('2011-01-01'),as.Date('2015-01-01'),
                      as.Date('2016-08-31'),as.Date('2019-01-01'))
+
 
 dados <- dados%>% 
   mutate(Data = as.Date(Data,format = '%d/%m/%Y'))%>%
@@ -27,13 +37,18 @@ dados <- dados%>%
                               if_else(Mandato == 'Jair Bolsonaro',Data - inicio_mandatos[11],NA))))))))))))%>%
   mutate(Tempo_em_dias_1990 = Data - as.Date('1990-01-01'))%>%
   mutate(Tempo_dias = as.numeric(Tempo_dias), Tempo_em_dias_1990 = as.numeric(Tempo_em_dias_1990))%>%
-  select(-c(Política))%>%
   rename(Mandato_parcial = Mandato)%>%
   mutate(Mandato_parcial = factor(Mandato_parcial, levels = c('José Sarney','Fernando Collor','Itamar Franco',
                                             'Fernando Henrique Cardoso I','Fernando Henrique Cardoso II',
                                             'Luiz Inácio Lula da Silva I','Luiz Inácio Lula da Silva II',
                                             'Dilma Rousseff I','Dilma Rousseff II','Michel Temer',
-                                            'Jair Bolsonaro')))
+                                            'Jair Bolsonaro')))%>%
+  select(-c(Política))
+  
+
+
+
+#categotizando por governos completos
 dados <- dados%>%
   mutate(Mandato_completo = case_when(
     (Mandato_parcial == 'Fernando Henrique Cardoso I'| Mandato_parcial == 'Fernando Henrique Cardoso II')~'FHC',
@@ -44,6 +59,7 @@ dados <- dados%>%
     (Mandato_parcial == 'Jair Bolsonaro') ~ 'Bolsonaro',
     (Mandato_parcial == 'José Sarney') ~ 'Sarney',
     (Mandato_parcial == 'Fernando Collor') ~ 'Collor'))
+
 
 
 
@@ -61,6 +77,7 @@ dados <- dados%>%
                               if_else(Mandato_completo == 'Temer',Data - inicio_mandatos_completos[7],
                               if_else(Mandato_completo == 'Bolsonaro',Data - inicio_mandatos_completos[8],NA)))))))))%>%
   mutate(Tempo_dias_completo = as.numeric(Tempo_dias_completo))
+
 
 
 #categorizando por períodos
@@ -94,6 +111,11 @@ dados <- dados%>%
   mutate(periodos = factor(periodos, levels = c("1990 - 1994","1995 - 1998","1999 - 2002",
                                               "2003 - 2006","2007 - 2010","2011 - 2014",
                                               "2015 - 2018","2019 - 2022")))
+
+dados <- dados%>%select(c(Nome,Área,grande_area,Data, Ano, Mandato_parcial, Mandato_completo,
+                 periodos,Tempo_dias,Tempo_dias_completo,Tempo_em_dias_1990,Tempo_dias_periodo))
+
+
 #write_xlsx(dados,'Dataset_para_analises.xlsx')
 
 

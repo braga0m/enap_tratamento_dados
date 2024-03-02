@@ -3,8 +3,8 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load('tidyverse','readxl','data.table',
                'writexl','lubridate','survival')
 
-#dados
-dados <- read_xlsx('C:\\Users\\Matias\\Documents\\Projetos_e_Estudos\\ENAP\\Dados\\Dataset_para_analises.xlsx')
+#
+dados <- read_xlsx('C:\\Users\\Matias\\Documents\\Projetos_e_Estudos\\ENAP\\Dados\\lista_políticas_grupo_ENAP.xlsx')
 
 
 #contagem de políticas de acordo com uma segunda variável
@@ -22,6 +22,12 @@ mandatos_parcial <- dados%>%
   group_by(Mandato_parcial)%>%
   summarise(n = n())%>%
   arrange(desc(n))
+
+grande_area <- dados%>%
+  group_by(grande_area)%>%
+  summarise(n = n())%>%
+  arrange(grande_area)
+
 
 ####################################################curvas de sobrevivência - área
 ST_area <- function(parametro,cor = 'black'){
@@ -75,11 +81,6 @@ turismo <- ST_area('Turismo, Desporto e Lazer','#d35400')
 
 
 
-
-
-
-
-
 ######################################################### curvas sobrevivência - mandatos completos
 ST_mandato_completo <- function(parametro,cor = 'black', presidente){
   dias <- dados%>%
@@ -106,6 +107,7 @@ lula <- ST_mandato_completo('Lula','#fb2c00','Lula')
 dilma <- ST_mandato_completo('Dilma','#161612','Dilma')
 temer <- ST_mandato_completo('Temer','#33d616', 'Michel Temer')
 bolsonaro <- ST_mandato_completo('Bolsonaro','#d68216', 'Jair Bolsonaro')
+
 
 
 
@@ -143,6 +145,8 @@ dilma_2 <- ST_mandato_parcial('Dilma Rousseff II','#7e7e7d','Dilma II')
 #
 temer <- ST_mandato_parcial("Michel Temer",'#33d616', 'Michel Temer')
 bolsonaro <- ST_mandato_parcial("Jair Bolsonaro",'#d68216', 'Jair Bolsonaro')
+
+
 
 
 ############################################################# curvas de sobrevivência por períodos
@@ -197,3 +201,43 @@ plot(ekm,conf.int=F, xlab="Tempo (em dias)", ylab="S(t)",lty = c(1,1,1,1,1,1,1,1
 
 legend(1300,0.99,lty=c(1,1,1,1,1,1,1,1),c(unique(periodos_ordenados$periodos)),
        col = c('#000000','#cf0808','#25b808','#05adb2','#c8ce09','#9503b9','#0a18bf','#eba31d'),cex = 0.9)
+
+
+
+
+
+############################################################# curvas de sobrevivência por grandes areas
+grande_area_ordenados <- dados%>%
+  select(c(grande_area,Tempo_em_dias_1990))%>%
+  arrange(grande_area)
+
+tempo <- grande_area_ordenados%>%pull(Tempo_em_dias_1990)
+censura <- rep(1,length(tempo))
+grupos <- c(rep(1,32),rep(2,22),rep(3,125),rep(4,39),rep(5,37),rep(6,276))
+
+ekm <- survfit(Surv(tempo,censura)~grupos, conf.int = F)
+
+plot(ekm,conf.int=F, xlab="Tempo (em dias)", ylab="S(t)",lty = c(1,1,1,1,1,1),
+     col = c('#000000','#d51443','#1420d5','#14d583','#d5c314','#a314d5'),
+     main = 'Curvas de sobrevivência por macro área')
+
+legend(400,0.5,lty=c(1,1,1,1,1,1),c(unique(grande_area_ordenados$grande_area)),
+       col = c('#000000','#d51443','#1420d5','#14d583','#d5c314','#a314d5'),cex = 0.8)
+
+################################################# curva de sobrevivencia geral
+ST_geral <- function(cor = 'black', main){
+  dias <- dados%>%
+    mutate(Data = as.Date(Data,format = '%d/%m/%Y'))%>%
+    mutate(Tempo_em_dias_1990 = Data - as.Date('1990-01-01'))%>%
+    mutate(Tempo_em_dias_1990 = as.numeric(Tempo_em_dias_1990))%>%
+    pull(Tempo_em_dias_1990)
+  
+  censura <- rep(1,length(dias))
+  ekm <- survfit(Surv(dias,censura)~1, conf.int = F)
+  
+  curva <- plot(ekm,conf.int=F, xlab="Tempo (em dias)", ylab="S(t)", col = cor, main = main)
+  
+  return(curva)
+}
+
+ST_geral(main = 'Curva de Sobrevivência')
